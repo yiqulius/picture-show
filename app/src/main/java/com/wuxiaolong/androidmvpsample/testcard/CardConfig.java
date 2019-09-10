@@ -25,11 +25,11 @@ public final class CardConfig {
     /**
      * 卡片向左滑动时
      */
-    public static final int SWIPING_LEFT = 1 << 2;
+    public static final int SWIPING_LEFT = 4;
     /**
      * 卡片向右滑动时
      */
-    public static final int SWIPING_RIGHT = 1 << 3;
+    public static final int SWIPING_RIGHT = 8;
     /**
      * 卡片从左边滑出
      */
@@ -37,6 +37,6 @@ public final class CardConfig {
     /**
      * 卡片从右边滑出
      */
-    public static final int SWIPED_RIGHT = 1 << 2;
+    public static final int SWIPED_RIGHT = 4;
 
 }

@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.PixelFormat;
 import android.graphics.drawable.BitmapDrawable;
@@ -15,6 +16,10 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
+import android.renderscript.Allocation;
+import android.renderscript.Element;
+import android.renderscript.RenderScript;
+import android.renderscript.ScriptIntrinsicBlur;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
@@ -29,13 +34,20 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.DataSource;
+import com.bumptech.glide.load.engine.GlideException;
+import com.bumptech.glide.request.RequestListener;
 import com.bumptech.glide.request.RequestOptions;
 import com.bumptech.glide.request.target.SimpleTarget;
+import com.bumptech.glide.request.target.Target;
 import com.bumptech.glide.request.transition.Transition;
+import com.squareup.picasso.Picasso;
 import com.wuxiaolong.androidmvpsample.R;
 import com.wuxiaolong.androidmvpsample.bean.TestBean;
 import com.wuxiaolong.androidmvpsample.mvp.main.MainModel;
@@ -57,6 +69,7 @@ import retrofit2.Call;
 
 import static com.wuxiaolong.androidmvpsample.testcard.CardConfig.SWIPING_LEFT;
 import static com.wuxiaolong.androidmvpsample.testcard.CardConfig.SWIPING_RIGHT;
+import static java.security.AccessController.getContext;
 
 
 public class MainActivity extends MvpActivity<MainPresenter> implements MainView {
@@ -68,15 +81,16 @@ public class MainActivity extends MvpActivity<MainPresenter> implements MainView
     static boolean isSave = false;
     CardLayoutManager cardLayoutManager;
     static String s1;
+    ImageView vb;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 //        requestWindowFeature(Window.FEATURE_NO_TITLE);
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
         setContentView(R.layout.activity_main2);
+        vb = findViewById(R.id.v_bg);
 
         loadData2();
-        Log.e(TAG, "onCreate: " + SWIPING_LEFT + " " + SWIPING_RIGHT );
     }
 
     @Override
@@ -213,6 +227,7 @@ public class MainActivity extends MvpActivity<MainPresenter> implements MainView
         @Override
         public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
             ImageView i1 = ((MyViewHolder) holder).avatarImageView;
+            i1.bringToFront();
             Log.e(TAG, "onBindViewHolder: " +  position);
             getItemCount();
             Glide.with(MainActivity.this)
@@ -223,7 +238,38 @@ public class MainActivity extends MvpActivity<MainPresenter> implements MainView
 
             switch (position){
                 case 0:
+
+
+
+
                     Log.e(TAG, "t1.getData: " + t1.getData().get(position).getUrl());
+
+
+                    Glide.with(MainActivity.this)
+                            .asBitmap()
+                            .listener(new RequestListener<Bitmap>() {
+                                @Override
+                                public boolean onLoadFailed(@Nullable GlideException e, Object model, Target<Bitmap> target, boolean isFirstResource) {
+                                    return false;
+                                }
+
+                                @Override
+                                public boolean onResourceReady(Bitmap resource, Object model, Target<Bitmap> target, DataSource dataSource, boolean isFirstResource) {
+                                    Bitmap blurBitmap = ImageFilter.blurBitmap(MainActivity.this, resource, 1);
+
+//                                    BitmapFactory.Options options = new BitmapFactory.Options();
+//                                    Bitmap bitmap1 = BitmapFactory.decodeResource(getResources(), R.drawable.bgpic,options);
+//                                    Bitmap bgbm = BlurUtil.doBlur(bitmap1,10,5);
+//                                    vb.setImageBitmap(bgbm);
+                                    vb.setImageBitmap(blurBitmap);
+                                    return false;
+                                }
+                            })
+                            .load(t1.getData().get(position).getUrl())
+                            .preload(300, 300);//设置长宽，原图就去掉参数
+
+
+
                     break;
             }
 //            avatarImageView.setImageResource(list.get(position));
@@ -365,4 +411,7 @@ public class MainActivity extends MvpActivity<MainPresenter> implements MainView
                 super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         }
     }
+
+
+
 }
