@@ -339,14 +339,12 @@ public class MainActivity extends MvpActivity<MainPresenter> implements MainView
 
     public static String saveImageToGallery(Context context, Bitmap bmp) {
         Log.d(TAG, "saveImageToGallery: " + bmp);
-        String imgpath = Environment.getExternalStorageDirectory().toString() + "/HeBeiNM/";
+        String imgpath = Environment.getExternalStorageDirectory().toString() + "/test-down/";
         // 首先保存图片
-        File appDir = new File(Environment.getExternalStorageDirectory().toString(), "HeBeiNM");
+        File appDir = new File(Environment.getExternalStorageDirectory().toString(), "picDown");
         if (!appDir.exists()) {
             appDir.mkdir();
         }
-
-//        String fileName = System.currentTimeMillis() + "sc.jpg";
         String fileName = "Test:" + ms2Date(System.currentTimeMillis()) + ".jpg" ;
         imgpath += fileName;
         File file = new File(appDir, fileName);
