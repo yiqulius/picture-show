@@ -22,12 +22,6 @@ public class CardItemTouchHelperCallback<T> extends ItemTouchHelper.Callback {
         this.dataList = checkIsNull(dataList);
     }
 
-    public CardItemTouchHelperCallback(@NonNull RecyclerView.Adapter adapter, @NonNull List<T> dataList, OnSwipeListener<T> listener) {
-        this.adapter = checkIsNull(adapter);
-        this.dataList = checkIsNull(dataList);
-        this.mListener = listener;
-    }
-
     private <T> T checkIsNull(T t) {
         if (t == null) {
             throw new NullPointerException();
@@ -59,8 +53,8 @@ public class CardItemTouchHelperCallback<T> extends ItemTouchHelper.Callback {
     public void onSwiped(RecyclerView.ViewHolder viewHolder, int direction) {
         // 移除 onTouchListener,否则触摸滑动会乱了
         viewHolder.itemView.setOnTouchListener(null);
+//        4
         int layoutPosition = viewHolder.getLayoutPosition();
-        Log.e(TAG, "onSwiped: " + direction);
         T remove = dataList.remove(layoutPosition);
         adapter.notifyDataSetChanged();
         if (mListener != null) {

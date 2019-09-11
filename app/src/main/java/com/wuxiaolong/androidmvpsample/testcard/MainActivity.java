@@ -1,12 +1,15 @@
 package com.wuxiaolong.androidmvpsample.testcard;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
+import android.app.WallpaperManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
+import android.graphics.Matrix;
 import android.graphics.PixelFormat;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
@@ -16,27 +19,20 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
-import android.renderscript.Allocation;
-import android.renderscript.Element;
-import android.renderscript.RenderScript;
-import android.renderscript.ScriptIntrinsicBlur;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.DefaultItemAnimator;
-import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.helper.ItemTouchHelper;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.Window;
 import android.view.WindowManager;
-import android.widget.FrameLayout;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
@@ -47,7 +43,7 @@ import com.bumptech.glide.request.RequestOptions;
 import com.bumptech.glide.request.target.SimpleTarget;
 import com.bumptech.glide.request.target.Target;
 import com.bumptech.glide.request.transition.Transition;
-import com.squareup.picasso.Picasso;
+import com.google.gson.Gson;
 import com.wuxiaolong.androidmvpsample.R;
 import com.wuxiaolong.androidmvpsample.bean.TestBean;
 import com.wuxiaolong.androidmvpsample.mvp.main.MainModel;
@@ -56,10 +52,16 @@ import com.wuxiaolong.androidmvpsample.mvp.main.MainView;
 import com.wuxiaolong.androidmvpsample.mvp.other.MvpActivity;
 import com.wuxiaolong.androidmvpsample.retrofit.RetrofitCallback;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.StreamCorruptedException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
@@ -69,7 +71,6 @@ import retrofit2.Call;
 
 import static com.wuxiaolong.androidmvpsample.testcard.CardConfig.SWIPING_LEFT;
 import static com.wuxiaolong.androidmvpsample.testcard.CardConfig.SWIPING_RIGHT;
-import static java.security.AccessController.getContext;
 
 
 public class MainActivity extends MvpActivity<MainPresenter> implements MainView {
@@ -80,8 +81,10 @@ public class MainActivity extends MvpActivity<MainPresenter> implements MainView
     RecyclerView recyclerView;
     static boolean isSave = false;
     CardLayoutManager cardLayoutManager;
-    static String s1;
+    static String urlPos;
     ImageView vb;
+    private int count;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -90,7 +93,13 @@ public class MainActivity extends MvpActivity<MainPresenter> implements MainView
         setContentView(R.layout.activity_main2);
         vb = findViewById(R.id.v_bg);
 
-        loadData2();
+        if (!readSetting()){
+            loadData2();
+        } else {
+            count = t1.getData().size() + 1;
+            initView();
+        }
+
     }
 
     @Override
@@ -133,7 +142,7 @@ public class MainActivity extends MvpActivity<MainPresenter> implements MainView
                     RequestOptions requestOptions = new RequestOptions();
                     requestOptions.centerCrop();
                     Glide.with(MainActivity.this)
-                            .load(s1)
+                            .load(o.getUrl())
                             .apply(requestOptions)
                             .into(new SimpleTarget<Drawable>() {
                         @Override
@@ -142,7 +151,6 @@ public class MainActivity extends MvpActivity<MainPresenter> implements MainView
                         }
                     });
                 }
-//                Toast.makeText(MainActivity.this, direction == CardConfig.SWIPED_LEFT ? "swiped left" : "swiped right", Toast.LENGTH_SHORT).show();
             }
 
             @Override
@@ -193,11 +201,105 @@ public class MainActivity extends MvpActivity<MainPresenter> implements MainView
 
     private void dataSuccess(TestBean model) {
         t1 = model;
+        Gson gson = new Gson();
+        String s = gson.toJson(model);
+
+
+        String state = Environment.getExternalStorageState();
+        if (!state.equals(Environment.MEDIA_MOUNTED)) {
+            Toast.makeText(MainActivity.this, "SD卡未就绪", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+
+        File root = Environment.getExternalStorageDirectory();
+        FileOutputStream fos = null;
+        ObjectOutputStream oos = null;
+        try {
+            fos = new FileOutputStream(root + "/settings.txt");
+            oos = new ObjectOutputStream(fos);
+            oos.writeObject(s);
+
+
+            Toast.makeText(MainActivity.this, "保存成功", Toast.LENGTH_SHORT).show();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            if (oos != null) {
+                try {
+                    oos.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
+        count = t1.getData().size() + 1;
         initView();
+    }
+
+    public boolean readSetting() {
+        File file = Environment.getExternalStorageDirectory();
+        FileInputStream fis = null;
+        ObjectInputStream ois = null;
+        try {
+            fis = new FileInputStream(file + "/settings.txt");
+            ois = new ObjectInputStream(fis);
+            Gson gson = new Gson();
+
+            String tb = (String) ois.readObject();
+
+
+
+
+
+
+
+//            StringBuilder stringBuilder = new StringBuilder();
+//            FileInputStream fileInputStream = new FileInputStream(file);
+//            String line = "";
+//            BufferedReader reader = new BufferedReader(new InputStreamReader(fileInputStream));
+//            line = reader.readLine();
+//            while (line != null) {
+//                stringBuilder.append(line);
+//                stringBuilder.append("\n");
+//                line = reader.readLine();
+//            }
+//            reader.close();
+//            fileInputStream.close();
+//            String a1 = stringBuilder.toString();
+            t1 = gson.fromJson(tb, TestBean.class);
+            if (t1 != null){
+                Log.i(TAG, "readSetting: ");
+                return true;
+            }
+
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (StreamCorruptedException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        } finally {
+            if (ois != null) {
+                try {
+                    ois.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
+        return false;
     }
 
     @Override
     public void getDataSuccess(MainModel model) {
+
 
     }
 
@@ -216,84 +318,27 @@ public class MainActivity extends MvpActivity<MainPresenter> implements MainView
 
     }
 
-    private class MyAdapter extends RecyclerView.Adapter {
-
-        @Override
-        public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-            View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item, parent, false);
-            return new MyViewHolder(view);
-        }
-
-        @Override
-        public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
-            ImageView i1 = ((MyViewHolder) holder).avatarImageView;
-            i1.bringToFront();
-            Log.e(TAG, "onBindViewHolder: " +  position);
-            getItemCount();
-            Glide.with(MainActivity.this)
-                    .load(t1.getData().get(position).getUrl())
-                    .into(i1);
-
-            s1 = t1.getData().get(position).getUrl();
-
-            switch (position){
-                case 0:
-
-
-
-
-                    Log.e(TAG, "t1.getData: " + t1.getData().get(position).getUrl());
-
-
-                    Glide.with(MainActivity.this)
-                            .asBitmap()
-                            .listener(new RequestListener<Bitmap>() {
-                                @Override
-                                public boolean onLoadFailed(@Nullable GlideException e, Object model, Target<Bitmap> target, boolean isFirstResource) {
-                                    return false;
-                                }
-
-                                @Override
-                                public boolean onResourceReady(Bitmap resource, Object model, Target<Bitmap> target, DataSource dataSource, boolean isFirstResource) {
-                                    Bitmap blurBitmap = ImageFilter.blurBitmap(MainActivity.this, resource, 1);
-
-//                                    BitmapFactory.Options options = new BitmapFactory.Options();
-//                                    Bitmap bitmap1 = BitmapFactory.decodeResource(getResources(), R.drawable.bgpic,options);
-//                                    Bitmap bgbm = BlurUtil.doBlur(bitmap1,10,5);
-//                                    vb.setImageBitmap(bgbm);
-                                    vb.setImageBitmap(blurBitmap);
-                                    return false;
-                                }
-                            })
-                            .load(t1.getData().get(position).getUrl())
-                            .preload(300, 300);//设置长宽，原图就去掉参数
-
-
-
-                    break;
-            }
-//            avatarImageView.setImageResource(list.get(position));
-        }
-
-        @Override
-        public int getItemCount() {
-            return t1.getData().size();
-        }
-
-        class MyViewHolder extends RecyclerView.ViewHolder {
-
-            ImageView avatarImageView;
-            ImageView likeImageView;
-            ImageView dislikeImageView;
-
-            MyViewHolder(View itemView) {
-                super(itemView);
-                avatarImageView = (ImageView) itemView.findViewById(R.id.iv_avatar);
-                likeImageView = (ImageView) itemView.findViewById(R.id.iv_like);
-                dislikeImageView = (ImageView) itemView.findViewById(R.id.iv_dislike);
-            }
-
-        }
+    /**
+     * 设置为壁纸的图片应该填充满整个屏幕，所以需要先剪裁
+     * @param bitMap
+     * @return
+     */
+    private Bitmap imageCropper(Bitmap bitMap) {
+        int width = bitMap.getWidth();
+        int height = bitMap.getHeight();
+        // 设置想要的大小
+        int newWidth = DisplayUtil.getDisplayMetrics(MainActivity.this).widthPixels;
+        int newHeight = DisplayUtil.getDisplayMetrics(MainActivity.this).heightPixels;
+        // 计算缩放比例
+        float scaleWidth = ((float) newWidth) / width;
+        float scaleHeight = ((float) newHeight) / height;
+        // 取得想要缩放的matrix参数
+        Matrix matrix = new Matrix();
+        matrix.postScale(scaleWidth, scaleHeight);
+        // 得到新的图片
+        bitMap = Bitmap.createBitmap(bitMap, 0, 0, width, height, matrix,
+                true);
+        return bitMap;
     }
 
     /**
@@ -303,13 +348,12 @@ public class MainActivity extends MvpActivity<MainPresenter> implements MainView
         //判断版本
         if (Build.VERSION.SDK_INT >= 23) {
             //检查权限是否被授予：
-            int hasExternalPermission = ContextCompat.checkSelfPermission(com.wuxiaolong.androidmvpsample.testcard.MainActivity.this,  Manifest.permission.WRITE_EXTERNAL_STORAGE);
+            int hasExternalPermission = ContextCompat.checkSelfPermission(com.wuxiaolong.androidmvpsample.testcard.MainActivity.this, Manifest.permission.WRITE_EXTERNAL_STORAGE);
             if (hasExternalPermission != PackageManager.PERMISSION_GRANTED) {
                 ActivityCompat.requestPermissions(com.wuxiaolong.androidmvpsample.testcard.MainActivity.this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 11);
             }
         }
     }
-
 
     Bitmap drawable2Bitmap(Drawable drawable) {
         if (drawable instanceof BitmapDrawable) {
@@ -410,6 +454,80 @@ public class MainActivity extends MvpActivity<MainPresenter> implements MainView
         }
     }
 
+    private class MyAdapter extends RecyclerView.Adapter {
 
+        @Override
+        public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+            View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item, parent, false);
+            return new MyViewHolder(view);
+        }
+
+        @Override
+        public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
+
+            urlPos = t1.getData().get(position).getUrl();
+            ImageView i1 = ((MyViewHolder) holder).avatarImageView;
+            TextView tv = ((MyViewHolder) holder).tv;
+            Glide.with(MainActivity.this)
+                    .load(urlPos)
+                    .into(i1);
+
+            tv.setText(count - getItemCount() + " / " + count);
+
+            switch (position){
+                case 0:
+                    Glide.with(MainActivity.this)
+                            .asBitmap()
+                            .listener(new RequestListener<Bitmap>() {
+                                @Override
+                                public boolean onLoadFailed(@Nullable GlideException e, Object model, Target<Bitmap> target, boolean isFirstResource) {
+                                    return false;
+                                }
+
+                                @Override
+                                public boolean onResourceReady(Bitmap resource, Object model, Target<Bitmap> target, DataSource dataSource, boolean isFirstResource) {
+                                    Bitmap blurBitmap = ImageFilter.blurBitmap(MainActivity.this, resource, 1);
+                                    vb.setImageBitmap(blurBitmap);
+//                                    WallpaperManager wallpaperManager = WallpaperManager.getInstance(MainActivity.this);
+//                                    try {
+////                                        wallpaperManager.suggestDesiredDimensions(DisplayUtil.getDisplayMetrics(MainActivity.this).widthPixels,
+////                                                DisplayUtil.getDisplayMetrics(MainActivity.this).heightPixels);
+//                                        Bitmap decodeResource = BitmapFactory.decodeResource(getResources(), R.drawable.bg);
+//
+//                                        wallpaperManager.setBitmap(imageCropper(resource));
+//                                    } catch (IOException e) {
+//                                        e.printStackTrace();
+//                                    }
+                                    return false;
+                                }
+                            })
+                            .load(urlPos)
+                            .preload(200, 200);//设置长宽，原图就去掉参数
+                    break;
+            }
+        }
+
+        @Override
+        public int getItemCount() {
+            return t1.getData().size();
+        }
+
+        class MyViewHolder extends RecyclerView.ViewHolder {
+
+            TextView tv;
+            ImageView avatarImageView;
+            ImageView likeImageView;
+            ImageView dislikeImageView;
+
+            MyViewHolder(View itemView) {
+                super(itemView);
+                avatarImageView = (ImageView) itemView.findViewById(R.id.iv_avatar);
+                likeImageView = (ImageView) itemView.findViewById(R.id.iv_like);
+                dislikeImageView = (ImageView) itemView.findViewById(R.id.iv_dislike);
+                tv = (TextView) itemView.findViewById(R.id.text_number);
+            }
+
+        }
+    }
 
 }

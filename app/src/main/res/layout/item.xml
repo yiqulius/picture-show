@@ -90,6 +90,15 @@
             android:text="IT/互联网"
             android:textColor="#cbcbcb" />
 
+        <TextView
+            android:id="@+id/text_number"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/tv_age"
+            android:layout_marginStart="200dp"
+            android:gravity="center"
+            android:text=""
+            android:textColor="#cbcbcb" />
     </RelativeLayout>
 
 

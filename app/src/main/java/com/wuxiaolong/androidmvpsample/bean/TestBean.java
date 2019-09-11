@@ -1,5 +1,11 @@
 package com.wuxiaolong.androidmvpsample.bean;
 
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+
+import com.wuxiaolong.androidmvpsample.testcard.Base64Util;
+
+import java.io.Serializable;
 import java.util.List;
 
 public class TestBean {
@@ -125,4 +131,5 @@ public class TestBean {
             this.who = who;
         }
     }
+
 }
