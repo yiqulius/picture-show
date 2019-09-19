@@ -62,6 +62,7 @@ import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.StreamCorruptedException;
+import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
@@ -100,6 +101,7 @@ public class MainActivity extends MvpActivity<MainPresenter> implements MainView
             initView();
         }
 
+        System.out.println('N' + 'C');
     }
 
     @Override
@@ -112,7 +114,7 @@ public class MainActivity extends MvpActivity<MainPresenter> implements MainView
         recyclerView = (RecyclerView) findViewById(R.id.recyclerView);
         recyclerView.setItemAnimator(new DefaultItemAnimator());
         recyclerView.setAdapter(new MyAdapter());
-        CardItemTouchHelperCallback cardCallback = new CardItemTouchHelperCallback(recyclerView.getAdapter(), t1.getData());
+        CardItemTouchHelperCallback2 cardCallback = new CardItemTouchHelperCallback2(recyclerView.getAdapter(), t1.getData());
         cardCallback.setOnSwipedListener(new OnSwipeListener<TestBean.ResultsBean>() {
 
             @Override
@@ -248,28 +250,7 @@ public class MainActivity extends MvpActivity<MainPresenter> implements MainView
             fis = new FileInputStream(file + "/settings.txt");
             ois = new ObjectInputStream(fis);
             Gson gson = new Gson();
-
             String tb = (String) ois.readObject();
-
-
-
-
-
-
-
-//            StringBuilder stringBuilder = new StringBuilder();
-//            FileInputStream fileInputStream = new FileInputStream(file);
-//            String line = "";
-//            BufferedReader reader = new BufferedReader(new InputStreamReader(fileInputStream));
-//            line = reader.readLine();
-//            while (line != null) {
-//                stringBuilder.append(line);
-//                stringBuilder.append("\n");
-//                line = reader.readLine();
-//            }
-//            reader.close();
-//            fileInputStream.close();
-//            String a1 = stringBuilder.toString();
             t1 = gson.fromJson(tb, TestBean.class);
             if (t1 != null){
                 Log.i(TAG, "readSetting: ");
